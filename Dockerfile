@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM ghcr.io/linuxserver/baseimage-alpine:3.21
+FROM alpine:3.21
 
 # set version label
 ARG BUILD_DATE
@@ -16,6 +16,7 @@ RUN \
   fi && \
   echo "**** install dependencies ****" && \
   apk add --no-cache \
+    bash \
     bc \
     coredns \
     grep \
@@ -51,3 +52,6 @@ COPY /root /
 
 # ports and volumes
 EXPOSE 51820/udp
+
+# Set the startup script as entrypoint
+ENTRYPOINT ["/app/startup.sh"]
