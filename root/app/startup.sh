@@ -49,19 +49,6 @@ else
     exit 1
 fi
 
-# Start CoreDNS if configuration exists and binary is available
-if [ -f "/config/coredns/Corefile" ] && command_exists coredns; then
-    log "Starting CoreDNS..."
-    coredns -conf /config/coredns/Corefile &
-    COREDNS_PID=$!
-    log "CoreDNS started with PID: $COREDNS_PID"
-elif [ -f "/config/coredns/Corefile" ]; then
-    log "WARNING: CoreDNS configuration found but binary not available"
-    log "CoreDNS binary location: $(which coredns 2>/dev/null || echo 'not found')"
-else
-    log "No CoreDNS configuration found, skipping DNS service"
-fi
-
 # Start WireGuard if configuration exists
 if [ -f "/config/wg0.conf" ]; then
     log "Starting WireGuard..."
@@ -82,13 +69,6 @@ if [ -f "/config/wg0.conf" ]; then
     iptables -A FORWARD -o wg0 -j ACCEPT          # Allow return traffic FROM internet TO WireGuard
     iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE  # NAT outbound traffic
     
-    # Add route to 192.168.1.X network if it exists
-    if ip route show | grep -q "192.168.1.0/24"; then
-        log "192.168.1.0/24 network route already exists"
-    else
-        log "Adding route to 192.168.1.0/24 network..."
-        ip route add 192.168.1.0/24 dev eth0 2>/dev/null || log "Route already exists or failed"
-    fi
     
     log "Iptables rules configured successfully"
 else
@@ -98,14 +78,7 @@ fi
 log "Container startup completed successfully"
 
 # Keep container running
-if [ -n "$COREDNS_PID" ]; then
-    # Wait for CoreDNS if it's running
-    log "Waiting for CoreDNS process..."
-    wait $COREDNS_PID
-else
-    # Keep container alive
-    log "No services running, keeping container alive..."
-    while true; do
-        sleep 3600
-    done
-fi
+log "WireGuard service running, keeping container alive..."
+while true; do
+    sleep 3600
+done
