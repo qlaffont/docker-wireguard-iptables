@@ -52,6 +52,14 @@ fi
 # Start WireGuard if configuration exists
 if [ -f "/config/wg0.conf" ]; then
     log "Starting WireGuard..."
+    
+    # Clean up existing WireGuard interface if it exists
+    if ip link show wg0 >/dev/null 2>&1; then
+        log "Cleaning up existing WireGuard interface..."
+        wg-quick down wg0 2>/dev/null || true
+        ip link del wg0 2>/dev/null || true
+    fi
+    
     wg-quick up /config/wg0.conf
     log "WireGuard started successfully"
     
