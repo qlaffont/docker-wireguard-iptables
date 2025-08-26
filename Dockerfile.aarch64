@@ -19,6 +19,7 @@ RUN \
     bash \
     bc \
     coredns \
+    curl \
     grep \
     iproute2 \
     iptables \
