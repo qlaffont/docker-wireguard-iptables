@@ -1,0 +1,16 @@
+#!/usr/bin/with-contenv bash
+
+# Finalize configuration after all init services
+echo "**** Finalizing configuration... ****"
+
+# Ensure all config files have proper permissions
+if [ -d "/config" ]; then
+    chmod -R 755 /config
+fi
+
+if [ -d "/etc/wireguard" ]; then
+    chmod -R 600 /etc/wireguard/*.conf 2>/dev/null || true
+fi
+
+echo "**** Configuration finalized ****"
+exit 0
