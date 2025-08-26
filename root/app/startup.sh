@@ -21,6 +21,17 @@ mkdir -p /etc/wireguard
 chmod 755 /config
 chmod 755 /etc/wireguard
 
+# Copy default configurations if they don't exist
+if [ ! -f "/config/coredns/Corefile" ] && [ -f "/defaults/Corefile" ]; then
+    log "Copying default CoreDNS configuration..."
+    cp /defaults/Corefile /config/coredns/
+fi
+
+if [ ! -f "/config/wg0.conf" ] && [ -f "/defaults/server.conf" ]; then
+    log "Copying default WireGuard server configuration..."
+    cp /defaults/server.conf /config/wg0.conf
+fi
+
 # Check for wireguard module
 log "Checking WireGuard module..."
 ip link del dev test 2>/dev/null || true
@@ -38,12 +49,15 @@ else
     exit 1
 fi
 
-# Start CoreDNS if configuration exists
-if [ -f "/config/coredns/Corefile" ]; then
+# Start CoreDNS if configuration exists and binary is available
+if [ -f "/config/coredns/Corefile" ] && command_exists coredns; then
     log "Starting CoreDNS..."
-    /usr/sbin/coredns -conf /config/coredns/Corefile &
+    coredns -conf /config/coredns/Corefile &
     COREDNS_PID=$!
     log "CoreDNS started with PID: $COREDNS_PID"
+elif [ -f "/config/coredns/Corefile" ]; then
+    log "WARNING: CoreDNS configuration found but binary not available"
+    log "CoreDNS binary location: $(which coredns 2>/dev/null || echo 'not found')"
 else
     log "No CoreDNS configuration found, skipping DNS service"
 fi
@@ -62,8 +76,12 @@ log "Container startup completed successfully"
 # Keep container running
 if [ -n "$COREDNS_PID" ]; then
     # Wait for CoreDNS if it's running
+    log "Waiting for CoreDNS process..."
     wait $COREDNS_PID
 else
     # Keep container alive
-    tail -f /dev/null
+    log "No services running, keeping container alive..."
+    while true; do
+        sleep 3600
+    done
 fi
