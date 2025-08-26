@@ -71,6 +71,12 @@ if [ -f "/config/wg0.conf" ]; then
     # Add iptables rules for IP forwarding
     log "Configuring iptables for IP forwarding..."
     sysctl -w net.ipv4.ip_forward=1
+    
+    # Remove any existing rules to avoid duplicates
+    iptables -D FORWARD -i wg0 -j ACCEPT 2>/dev/null || true
+    iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE 2>/dev/null || true
+    
+    # Add specific rules for WireGuard traffic
     iptables -A FORWARD -i wg0 -j ACCEPT
     iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
     log "Iptables rules configured successfully"
