@@ -74,11 +74,13 @@ if [ -f "/config/wg0.conf" ]; then
     
     # Remove any existing rules to avoid duplicates
     iptables -D FORWARD -i wg0 -j ACCEPT 2>/dev/null || true
+    iptables -D FORWARD -o wg0 -j ACCEPT 2>/dev/null || true
     iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE 2>/dev/null || true
     
-    # Add specific rules for WireGuard traffic
-    iptables -A FORWARD -i wg0 -j ACCEPT
-    iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+    # Add bidirectional rules for WireGuard traffic
+    iptables -A FORWARD -i wg0 -j ACCEPT          # Allow traffic FROM WireGuard TO internet
+    iptables -A FORWARD -o wg0 -j ACCEPT          # Allow return traffic FROM internet TO WireGuard
+    iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE  # NAT outbound traffic
     log "Iptables rules configured successfully"
 else
     log "No WireGuard configuration found, skipping WireGuard service"
