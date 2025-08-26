@@ -67,6 +67,13 @@ if [ -f "/config/wg0.conf" ]; then
     log "Starting WireGuard..."
     wg-quick up /config/wg0.conf
     log "WireGuard started successfully"
+    
+    # Add iptables rules for IP forwarding
+    log "Configuring iptables for IP forwarding..."
+    sysctl -w net.ipv4.ip_forward=1
+    iptables -A FORWARD -i wg0 -j ACCEPT
+    iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+    log "Iptables rules configured successfully"
 else
     log "No WireGuard configuration found, skipping WireGuard service"
 fi
