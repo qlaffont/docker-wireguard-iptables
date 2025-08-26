@@ -81,6 +81,15 @@ if [ -f "/config/wg0.conf" ]; then
     iptables -A FORWARD -i wg0 -j ACCEPT          # Allow traffic FROM WireGuard TO internet
     iptables -A FORWARD -o wg0 -j ACCEPT          # Allow return traffic FROM internet TO WireGuard
     iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE  # NAT outbound traffic
+    
+    # Add route to 192.168.1.X network if it exists
+    if ip route show | grep -q "192.168.1.0/24"; then
+        log "192.168.1.0/24 network route already exists"
+    else
+        log "Adding route to 192.168.1.0/24 network..."
+        ip route add 192.168.1.0/24 dev eth0 2>/dev/null || log "Route already exists or failed"
+    fi
+    
     log "Iptables rules configured successfully"
 else
     log "No WireGuard configuration found, skipping WireGuard service"
